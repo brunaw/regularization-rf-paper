@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+regularization-rf-paper.Rproj
+Plots
+paper_files
+auxiliar_results
+rds
