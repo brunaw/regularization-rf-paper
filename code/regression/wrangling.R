@@ -1,8 +1,6 @@
 #-------------------------------------------------------------------
 # Wrangling of the resulting models for the simulated data 
-# Bruna Wundervald, August 2019
 #-------------------------------------------------------------------
-
 library(tidyverse)
 library(ranger)
 
@@ -33,7 +31,6 @@ test_list_sc <- sim_new[2, 1:n] %>%
   rep(each = length(lambdas)*length(mtry))
 
 # 0. Standard Random Forests  --------------------------------
-
 std_rf <- readRDS("rds/models/std_rf.Rds")
 
 # 1. Constant models and scaled data --------------------------------
@@ -194,63 +191,70 @@ df_boosted_svm <-
   mutate(model = "boosted_svm")
 
 
-
 df_mix <- df_boosted_rf  %>% 
   bind_rows(df_corr) %>% 
   bind_rows(df_boosted_svm)
 
-vec <- 0.9^(1:200/3)
-sum(vec > 0.003)
 
+# Extracting variable names used ---
 nam <- names(sim_new_sc[[1]])
-imp_nam <- nam[-1][c(1:5, 6:170)][]
+
+get_names <- function(model){
+  index <- unique(unlist(model$forest$split.varIDs))
+  nam[index]
+}
+
+nam_rf <- boosted_rf$boosted_rf %>% 
+  map( ~{.x %>% map(get_names)} ) 
+
+nam_corr <- corr_models$corr_models %>% 
+  map(~{ .x %>% map(get_names)}) 
+
+nam_svm <- boosted_svm$boosted_svm %>% 
+  map(~{ .x %>% map(get_names)}) 
+
+# Finding proportions of important and of correlated variables ---
+vec <- 0.9^(1:200/3)
+
+limi <- sum(vec > 0.01)
+imp_nam <- nam[-1][c(1:5, 6:limi)]
 corr_vars <- nam[-1][c(206:250)]
 vec <- 0.9^(1:45)
-corr_useless <- corr_vars
 
-
-# Identifying important variables 
-identify_imp <- function(model){
-
-  index <- unique(unlist(model$forest$split.varIDs))
-  names_in_model <- nam[index]
+# Identifying proportions
+identify_imp <- function(names_in_model){
   
-  using_corr <- sum(corr_useless %in% names_in_model)
+  using_corr <- sum(corr_vars %in% names_in_model)
+  using_imp <- sum(imp_nam %in% names_in_model[
+    which(!names_in_model %in% corr_vars)])
   
-  using_imp <- sum(imp_nam %in% names_in_model[which(!names_in_model %in% corr_vars)])
   if(using_imp > 0){
     good <- using_imp/(length(names_in_model) - using_corr) }
   else{ good <- 0 }
-  bad <- using_corr/length(corr_useless)
+  
+  bad <- using_corr/length(corr_vars)
+  
   return(list(good = good, bad = bad))
 }
 
+imps_rf <- nam_rf %>% 
+  map(~{.x %>% map(identify_imp)}) 
 
-imps_rf <- boosted_rf$boosted_rf %>% 
-  map(
-    ~{.x %>% map(identify_imp)}) 
+imps_corr <- nam_corr %>% 
+  map(~{ .x %>% map(identify_imp)}) 
 
-imps_corr <- corr_models$corr_models %>% 
-  map(
-    ~{ .x %>% map(identify_imp)}) 
+imps_svm <- nam_svm %>% 
+  map(~{ .x %>% map(identify_imp)}) 
 
-imps_svm <- boosted_svm$boosted_svm %>% 
-  map(
-    ~{ .x %>% map(identify_imp)}) 
-
-
-
+# Saving results --- 
 df_mix$good <- c(imps_rf, imps_corr, imps_svm) %>%
-  map(~map_dbl(.x, "good")) %>%
-  unlist()
-
+  map(~map_dbl(.x, "good")) %>% unlist()
 
 df_mix$bad <- c(imps_rf, imps_corr, imps_svm) %>%
-  map(~map_dbl(.x, "bad")) %>%
-  unlist()
+  map(~map_dbl(.x, "bad")) %>% unlist()
 
+# Saving it --- 
 write.table(df_mix, file = "auxiliar_results/df_mix.txt")
-
 
 rm(boosted_rf)
 rm(corr_models)

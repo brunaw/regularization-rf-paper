@@ -5,8 +5,7 @@
 # 3. Simulation: creating data where all variables are important +
 # a bunch of variables are correlated
 # 4. Correlation using the Spearman method 
-# Bruna Wundervald, July 2019
-#-------------------------------------------------------------------
+#-----------------------------------------------------------
 library(tidyverse)
 library(ranger)
 
@@ -14,7 +13,7 @@ library(ranger)
 rmse <- function(x, ntree = 100, test = test){
   
   pred <- predict(x, test, predict.all = TRUE)$predictions %>% 
-    rowSums(na.rm = TRUE)/ntree
+    rowSums(.)/ntree
   
   sqrt(mean((pred - test$y)^2))
 }
@@ -80,7 +79,6 @@ ff %>% map(~summary(.x$y))
 corr_fc <- function(data, var){
   cor(data$y, y = data %>% pull(var), method = "spearman")
 }
-
 
 # RRF versions  ---------------------
 # 1. RMSE

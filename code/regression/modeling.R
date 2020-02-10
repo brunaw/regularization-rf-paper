@@ -1,7 +1,6 @@
-#-------------------------------------------------------------------
+#----------------------------------------------------------
 # Mixture models for the simulated data 
-# Bruna Wundervald, August 2019
-#-------------------------------------------------------------------
+#----------------------------------------------------------
 library(tidyverse)
 library(ranger)
 library(furrr)
@@ -12,6 +11,7 @@ source("code/regression/useful_functions.R")
 
 # Generating the parameters for all the models ---------------------
 lambdas <- seq(0.05, 0.99, length.out = 15)
+gammas_grrf <- lambdas
 mtry <- c(seq(15, 250, by = 30), 250)
 n <- 10
 gamma <- seq(0.001, 0.999, length.out = 5)
@@ -37,7 +37,6 @@ test_list_sc <- sim_new[2, 1:n] %>%
   }) %>% 
   rep(each = length(lambdas)*length(mtry))
 
-
 #-------------------------------------------------------------------
 # 0. Standard random forest
 #-------------------------------------------------------------------
@@ -51,12 +50,9 @@ std_rf <- sim_new_sc[1:n] %>%
              mtry = .x[[2]], 
              num.trees = 100,
              importance = "impurity")
-      
     })
 
-saveRDS(std_rf, 
-        file = "rds/models/std_rf.Rds")
-
+saveRDS(std_rf, file = "rds/models/std_rf.Rds")
 #-------------------------------------------------------------------
 # 1. Constant \lambda_i models
 #-------------------------------------------------------------------
@@ -84,17 +80,17 @@ res_no_depth <- sim_new_sc[1:n] %>%
 saveRDS(list(sim_sc = sim_new_sc, 
              res_no_depth = res_no_depth), 
         file = "rds/models/constant.Rds")
-
-
 #-------------------------------------------------------------------
-# 2. Constant \lambda_i models with the RRF package
+# 2.1 Constant \lambda_i models with the RRF package
 #-------------------------------------------------------------------
+
 # Building the modelling function 
-fc_mod_rrf <- function(data, coef_reg, 
+fc_mod_rrf <- function(data, coefReg, 
                        mtry, num.trees = 100){
   RRF::RRF(y ~ ., 
            data = data,
-           coef_reg  = coef_reg,
+           coefReg  = coefReg,
+           flagReg = 1, 
            ntree = num.trees,
            mtry = mtry)
 }
@@ -102,7 +98,7 @@ fc_mod_rrf <- function(data, coef_reg,
 res_rrf <- sim_new_sc[1:n] %>% 
   purrr::cross3(lambdas, mtry) %>%
   purrr::map(~fc_mod_rrf(data = .x[[1]], 
-                         coef_reg = .x[[2]],
+                         coefReg = .x[[2]],
                          mtry = .x[[3]]))
 
 df_rrf_scaled <-
@@ -120,7 +116,68 @@ df_rrf_scaled <-
   )
 
 saveRDS(list(df_rrf_scaled = df_rrf_scaled), 
-        file = "auxiliar_results/df_rrf_scaled.Rds")
+        file = "auxiliar_results/df_rrf_scaled_new.Rds")
+#-------------------------------------------------------------------
+# 2.2 GRRF models with the RRF package
+#-------------------------------------------------------------------
+test_list_grrf <- sim_new[2, 1:n] %>% 
+  map(~{
+    .x %>% mutate(y = scale(y))
+  }) %>% 
+  rep(each = length(mtry))
+
+fc_mod_grrf <- function(data, mtry, num.trees = 100){
+  m0 <- RRF::RRF(y ~ ., data = data, flagReg = 0)
+  imps <- m0$importance/max(m0$importance)
+  
+  coefs_mix <- 
+    gammas_grrf %>% 
+    map(~{ (1 - .x) + .x * imps })
+  
+  coefs_mix %>% 
+    map(~{
+      RRF::RRF(y ~ ., 
+               data = data, 
+               ntrees = 100, 
+               mtry = mtry, 
+               coefReg = .x, 
+               flagReg = 1)
+    })
+}
+  
+  
+res_grrf <- sim_new_sc[1:n] %>% 
+  purrr::cross2(mtry) %>%
+  furrr::future_map(~fc_mod_grrf(data = .x[[1]], mtry = .x[[2]]))
+
+df_grrf_scaled <-
+  data.frame(
+    pars = map(res_grrf, ~{.x %>% map_dbl(pars_rrf)}) %>% unlist(),
+    rmse = 
+        res_grrf  %>% 
+          map2(
+            .y = test_list_grrf, 
+            ~{.x %>% map_dbl(rmse_rrf, test = .y)})  %>% 
+          unlist() 
+      ) %>% 
+  mutate( 
+         lambdas_df = rep(gammas_grrf,  times = length(mtry)*n), 
+         mtry_df  = rep(mtry, each = length(gammas_grrf) * n))
+
+
+find_vars_rrf <- function(model){
+  names(test_list_grrf[[1]])[-1][model$importance > 0]  
+}
+
+vars_grrf <-  map(res_grrf$res_grrf, ~{.x %>% map(find_vars_rrf)}) 
+
+saveRDS(list(df_grrf_scaled = df_grrf_scaled), 
+        file = "auxiliar_results/df_grrf_scaled_new.Rds")
+
+saveRDS(list(vars_grrf = vars_grrf), 
+        file = "auxiliar_results/vars_grrf.Rds")
+
+saveRDS(list(res_grrf = res_grrf), file = "rds/res_grrf.Rds")
 
 #-------------------------------------------------------------------
 # 3. Boosted RF
@@ -151,7 +208,6 @@ map_boosted_rf <- function(data, mtry_fc, dep_par){
     })
 }
 
-
 boosted_rf <- mtry %>% 
   cross2(sim_new_sc) %>% 
   future_map(
@@ -163,8 +219,7 @@ boosted_rf <- mtry %>%
       )
     })
 
-list(boosted_rf = boosted_rf) %>% 
-  saveRDS("rds/models/boosted_rf.Rds")
+list(boosted_rf = boosted_rf) %>% saveRDS("rds/models/boosted_rf.Rds")
 
 #-------------------------------------------------------------------
 # 4. Correlation
@@ -207,9 +262,7 @@ corr_models <- mtry %>%
         dep_par = FALSE
       )})
 
-
-list(corr_models = corr_models) %>% 
-  saveRDS("rds/models/corr_models.Rds")
+list(corr_models = corr_models) %>% saveRDS("rds/models/corr_models.Rds")
 
 #-------------------------------------------------------------------
 # 5. Boosted SVM 
@@ -221,6 +274,10 @@ map_boosted_svm <- function(data, mtry_fc, dep_par){
            model="svm", kpar=list(sigma=0.10),  C = 2)
   svm.imp <- Importance(M, data=data)
   imp_norm <- (svm.imp$imp[-1]/max(svm.imp$imp[-1]))
+  
+  check_corr <- imp_norm == lag(imp_norm)
+  check_corr[is.na(check_corr)] <- TRUE
+  imp_norm[check_corr] <- 0
   
   coefs_mix <- 
     cross2(gamma, lambda_0) %>% 
@@ -234,13 +291,11 @@ map_boosted_svm <- function(data, mtry_fc, dep_par){
              mtry = mtry_fc, 
              importance = "impurity",
              num.trees = 100,
-             num.threads = 1,  # no parallelization 
              regularization.factor = .x, 
              regularization.usedepth = dep_par)
 
     })
 }
-
 
 boosted_svm <- mtry %>% 
   cross2(sim_new_sc) %>% 
@@ -253,11 +308,8 @@ boosted_svm <- mtry %>%
       )
     })
 
-list(boosted_svm = boosted_svm) %>% 
-  saveRDS("rds/models/boosted_svm.Rds") 
+list(boosted_svm = boosted_svm) %>% saveRDS("rds/models/boosted_svm.Rds") 
 
 #-------------------------------------------------------------------
 # End of modeling
 #-------------------------------------------------------------------
-
-
