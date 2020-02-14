@@ -31,10 +31,10 @@ test_list_sc <- sim_new[2, 1:n] %>%
   rep(each = length(lambdas)*length(mtry))
 
 # 0. Standard Random Forests  --------------------------------
-std_rf <- readRDS("rds/models/std_rf.Rds")
+std_rf <- readRDS("model_results/models/std_rf.Rds")
 
 # 1. Constant models and scaled data --------------------------------
-ct_models_scaled <- readRDS("rds/models/constant.Rds")
+ct_models_scaled <- readRDS("model_results/models/constant.Rds")
 ct_no_depth <- ct_models_scaled$res_no_depth
 
 #-------------------------------------------------------------------
@@ -107,9 +107,9 @@ test_list_sc <- sim_new[2, 1:n] %>%
 
 
 # Reading models back: 
-boosted_rf <- readRDS("rds/models/boosted_rf.Rds")
-corr_models <- readRDS("rds/models/corr_models.Rds")
-boosted_svm <- readRDS("rds/models/boosted_svm.Rds")
+boosted_rf <- readRDS("model_results/models/boosted_rf.Rds")
+corr_models <- readRDS("model_results/models/corr_models.Rds")
+boosted_svm <- readRDS("model_results/models/boosted_svm.Rds")
 
 # 3. Boosted RF
 df_boosted_rf <- 
@@ -253,7 +253,7 @@ df_mix$good <- c(imps_rf, imps_corr, imps_svm) %>%
 df_mix$bad <- c(imps_rf, imps_corr, imps_svm) %>%
   map(~map_dbl(.x, "bad")) %>% unlist()
 
-# Saving it --- 
+# Saving everything  --- 
 write.table(df_mix, file = "auxiliar_results/df_mix.txt")
 
 rm(boosted_rf)

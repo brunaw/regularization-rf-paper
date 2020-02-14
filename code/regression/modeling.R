@@ -5,6 +5,7 @@ library(tidyverse)
 library(ranger)
 library(furrr)
 library(rminer)
+# Parallelization (!!!)
 plan(multiprocess)
 
 source("code/regression/useful_functions.R")
@@ -52,7 +53,7 @@ std_rf <- sim_new_sc[1:n] %>%
              importance = "impurity")
     })
 
-saveRDS(std_rf, file = "rds/models/std_rf.Rds")
+saveRDS(std_rf, file = "model_results/regression/std_rf.Rds")
 #-------------------------------------------------------------------
 # 1. Constant \lambda_i models
 #-------------------------------------------------------------------
@@ -79,7 +80,7 @@ res_no_depth <- sim_new_sc[1:n] %>%
 
 saveRDS(list(sim_sc = sim_new_sc, 
              res_no_depth = res_no_depth), 
-        file = "rds/models/constant.Rds")
+        file = "model_results/regression/constant.Rds")
 #-------------------------------------------------------------------
 # 2.1 Constant \lambda_i models with the RRF package
 #-------------------------------------------------------------------
@@ -177,7 +178,7 @@ saveRDS(list(df_grrf_scaled = df_grrf_scaled),
 saveRDS(list(vars_grrf = vars_grrf), 
         file = "auxiliar_results/vars_grrf.Rds")
 
-saveRDS(list(res_grrf = res_grrf), file = "rds/res_grrf.Rds")
+saveRDS(list(res_grrf = res_grrf), file = "model_results/regression/res_grrf.Rds")
 
 #-------------------------------------------------------------------
 # 3. Boosted RF
@@ -219,7 +220,7 @@ boosted_rf <- mtry %>%
       )
     })
 
-list(boosted_rf = boosted_rf) %>% saveRDS("rds/models/boosted_rf.Rds")
+list(boosted_rf = boosted_rf) %>% saveRDS("model_results/regression/boosted_rf.Rds")
 
 #-------------------------------------------------------------------
 # 4. Correlation
@@ -262,7 +263,7 @@ corr_models <- mtry %>%
         dep_par = FALSE
       )})
 
-list(corr_models = corr_models) %>% saveRDS("rds/models/corr_models.Rds")
+list(corr_models = corr_models) %>% saveRDS("model_results/regression/corr_models.Rds")
 
 #-------------------------------------------------------------------
 # 5. Boosted SVM 
@@ -308,7 +309,7 @@ boosted_svm <- mtry %>%
       )
     })
 
-list(boosted_svm = boosted_svm) %>% saveRDS("rds/models/boosted_svm.Rds") 
+list(boosted_svm = boosted_svm) %>% saveRDS("model_results/regression/boosted_svm.Rds") 
 
 #-------------------------------------------------------------------
 # End of modeling

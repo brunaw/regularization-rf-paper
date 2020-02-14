@@ -14,7 +14,8 @@ sessionInfo() #  [1] ranger_0.12.2
 
 # From CRAN
 packages <- c("tidyverse", "furrr", "infotheo", "rminer", 
-              "RColorBrewer", "extrafont", "patchwork")
+              "RColorBrewer", "extrafont", "patchwork", 
+              "RRF", "data.table", "xtable")
 install.packages(packages)
 #---------------------------------------------------------------------
 

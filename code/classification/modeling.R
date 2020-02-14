@@ -2,7 +2,8 @@ library(ranger)
 library(tidyverse)
 library(furrr)
 library(infotheo) # for MI package
-plan(multiprocess) # Parallelization
+# Parallelization (!!!)
+plan(multiprocess) 
 
 # Data reading ---------------------------------
 # Gene datasets 
