@@ -4,7 +4,10 @@
 .Ruserdata
 .DS_Store
 regularization-rf-paper.Rproj
-Plots
 paper_files
-auxiliar_results
-rds
+model_results
+not_for_git
+code/ranger
+submission_extra
+data/regression/simulated/.Rapp.history
+data/regression/simulated/.sim_new_corr.rds.icloud
