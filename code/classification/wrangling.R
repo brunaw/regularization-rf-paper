@@ -2,10 +2,11 @@
 library(tidyverse)
 
 # Reading data ----------------
-rds_names <- list.files("rds/classification", pattern = "_ws\\.rds$") 
+rds_names <- list.files("auxiliar_results/classification", 
+                        pattern = "_ws\\.rds$") 
 
 rds <-  rds_names %>% 
-  map(~{read_rds(paste0("rds/classification/", .x))})  
+  map(~{read_rds(paste0("auxiliar_results/classification/", .x))})  
 
 sizes <- map_dbl(
   .x = rds, 
@@ -35,7 +36,7 @@ wrangle_rds <- map2(
         # Fixing the names
         models = as.character(models),
         # This is done because two type os models had their 
-        # name switched when saving
+        # name switched when saving for the first time
         models = ifelse(models == "GRRF", "StdRF", 
                         ifelse(models == "Std_RF", "grrf", models))) 
     
@@ -47,16 +48,13 @@ wrangle_rds <- map2(
 # of variables and mean error in test set 
 
 df  <- wrangle_rds %>% 
-  mutate(sample = rep(rep(1:50, each = 20), 10)) %>% 
+  mutate(sample = rep(rep(1:50, each = 4 * 5), 10)) %>% 
   group_by(dataset, models, sample) %>% 
   summarise(mean_error = mean(errors),
             sigma_error = sd(errors), 
             mean_vars = round(mean(nvars), 1)) %>% 
   group_by(dataset, models) %>% 
   arrange(dataset, models, mean_error, mean_vars) %>% 
-  #filter(mean_error == min(mean_error)) %>% 
-  slice(1) %>% 
-  arrange(dataset, models, mean_vars, mean_error) %>% 
   slice(1) %>% 
   select(-sample) %>% 
   arrange(dataset, mean_error) %>% 

@@ -1,7 +1,3 @@
-#-------------
-# for the server only
-# setwd("/users/research/bwundervald/regularization-rf")
-#-------------
 library(ranger)
 library(tidyverse)
 library(furrr)
@@ -33,7 +29,7 @@ classes <- list.files("data/classification/files",
     scan(file, character(), quote = "") 
   })
 
-# Saving final data.frames in an object
+# Saving all final data.frames in an object
 final_dfs <- map2(
   .x = ds, .y = classes, 
   ~{
@@ -41,11 +37,14 @@ final_dfs <- map2(
       mutate(class = .y)
   })
 
+
+final_dfs[[1]] <-  final_dfs[[1]][-1,]  # This row is all characters 
+
 # Saving and reading it back
 final_dfs %>% saveRDS("data/classification/final_dfs.Rds")
 
 final_dfs <-  readRDS("data/classification/final_dfs.Rds")
-final_dfs[[1]] <-  final_dfs[[1]][-1,]
+
 
 # Models ---------------------------------
 # 0. GRRF with the RRF package
@@ -196,7 +195,7 @@ da_1_10 <- future_map(
   .x = 1:10,
   ~{ modelling_classification(train = train, test = test) })
 
-saveRDS(da_1_10, "rds/classification/da_1_10.rds")
+saveRDS(da_1_10, "auxiliar_results/classification/da_1_10.rds")
 # -------------
 # 2 dataset
 data <- final_dfs[[2]]
@@ -216,7 +215,7 @@ da_2_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_2_10, "rds/classification/da_2_10.rds")
+saveRDS(da_2_10, "auxiliar_results/classification/da_2_10.rds")
 # -------------
 # 3 dataset
 data <- final_dfs[[3]]
@@ -237,7 +236,7 @@ da_3_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_3_10, "rds/classification/da_3_10.rds")
+saveRDS(da_3_10, "auxiliar_results/classification/da_3_10.rds")
 # -----------------------
 # 4 dataset
 data <- final_dfs[[4]]
@@ -257,7 +256,7 @@ da_4_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_4_10, "rds/classification/da_4_10.rds")
+saveRDS(da_4_10, "auxiliar_results/classification/da_4_10.rds")
 # -----------------------
 # 4 dataset
 data <- final_dfs[[5]]
@@ -277,7 +276,7 @@ da_5_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_5_10, "rds/classification/da_5_10.rds")
+saveRDS(da_5_10, "auxiliar_results/classification/da_5_10.rds")
 # -----------------------
 # 6 dataset
 data <- final_dfs[[6]]
@@ -297,7 +296,7 @@ da_6_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_6_10, "rds/classification/da_6_10.rds")
+saveRDS(da_6_10, "auxiliar_results/classification/da_6_10.rds")
 # -----------------------
 # 7 dataset
 data <- final_dfs[[7]]
@@ -317,7 +316,7 @@ da_7_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_7_10, "rds/classification/da_7_10.rds")
+saveRDS(da_7_10, "auxiliar_results/classification/da_7_10.rds")
 # -----------------------
 # 8 dataset
 data <- final_dfs[[8]]
@@ -337,7 +336,7 @@ da_8_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_8_10, "rds/classification/da_8_10.rds")
+saveRDS(da_8_10, "auxiliar_results/classification/da_8_10.rds")
 # -----------------------
 # 9 dataset
 data <- final_dfs[[9]]
@@ -357,7 +356,7 @@ da_9_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_9_10, "rds/classification/da_9_10.rds")
+saveRDS(da_9_10, "auxiliar_results/classification/da_9_10.rds")
 # -----------------------
 # 10 dataset
 data <- final_dfs[[10]]
@@ -377,7 +376,7 @@ da_10_10 <- future_map(
     modelling_classification(train = train, test = test)
   })    
 
-saveRDS(da_10_10, "rds/classification/da_10_10.rds")
+saveRDS(da_10_10, "auxiliar_results/classification/da_10_10.rds")
 
 # --------------------------------------------------------
 # With internal sampling
@@ -516,59 +515,59 @@ da_1_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[1]]) })
 
-saveRDS(da_1_ws, "rds/classification/da_1_ws.rds")
+saveRDS(da_1_ws, "auxiliar_results/classification/da_1_ws.rds")
 # --------------------------------------------------------
 da_2_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[2]]) })
 
-saveRDS(da_2_ws, "rds/classification/da_2_ws.rds")
+saveRDS(da_2_ws, "auxiliar_results/classification/da_2_ws.rds")
 # --------------------------------------------------------
 da_3_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[3]]) })
 
-saveRDS(da_3_ws, "rds/classification/da_3_ws.rds")
+saveRDS(da_3_ws, "auxiliar_results/classification/da_3_ws.rds")
 # --------------------------------------------------------
 da_4_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[4]]) })
 
-saveRDS(da_4_ws, "rds/classification/da_4_ws.rds")
+saveRDS(da_4_ws, "auxiliar_results/classification/da_4_ws.rds")
 # --------------------------------------------------------
 da_5_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[5]]) })
 
-saveRDS(da_5_ws, "rds/classification/da_5_ws.rds")
+saveRDS(da_5_ws, "auxiliar_results/classification/da_5_ws.rds")
 # --------------------------------------------------------
 da_6_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[6]]) })
 
-saveRDS(da_6_ws, "rds/classification/da_6_ws.rds")
+saveRDS(da_6_ws, "auxiliar_results/classification/da_6_ws.rds")
 # --------------------------------------------------------
 da_7_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[7]]) })
 
-saveRDS(da_7_ws, "rds/classification/da_7_ws.rds")
+saveRDS(da_7_ws, "auxiliar_results/classification/da_7_ws.rds")
 # --------------------------------------------------------
 da_8_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[8]]) })
 
-saveRDS(da_8_ws, "rds/classification/da_8_ws.rds")
+saveRDS(da_8_ws, "auxiliar_results/classification/da_8_ws.rds")
 # --------------------------------------------------------
 da_9_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[9]]) })
 
-saveRDS(da_9_ws, "rds/classification/da_9_ws.rds")
+saveRDS(da_9_ws, "auxiliar_results/classification/da_9_ws.rds")
 # --------------------------------------------------------
 da_10_ws <- future_map(
   .x = 1:50,
   ~{ modelling_classification_with_sampling(data = final_dfs[[10]]) })
 
-saveRDS(da_10_ws, "rds/classification/da_10_ws.rds")
-# ----------------------------------------------------------------------
+saveRDS(da_10_ws, "auxiliar_results/classification/da_10_ws.rds")
+# -------------------------------------------------------------
